@@ -1,0 +1,58 @@
+#!/bin/sh
+set -e
+
+USER_NAME=speech-dispatcher
+HOME_DIR=/run/speech-dispatcher
+
+if ! id -u $USER_NAME >/dev/null 2>&1; then
+  adduser --quiet --system --ingroup audio \
+          --home $HOME_DIR \
+          --shell /bin/false --disabled-login  \
+	  --gecos 'Speech Dispatcher' $USER_NAME
+elif ! test -d $HOME_DIR; then
+  if test -d /run/speechd; then
+    mv /run/speechd $HOME_DIR
+  else
+    mkdir $HOME_DIR
+  fi
+  usermod --shell /bin/false $USER_NAME
+fi
+
+if [ -d /var/log/speech-dispatcher ]; then
+  chown $USER_NAME /var/log/speech-dispatcher
+fi
+
+#DEBHELPER#
+
+if [ -z "$(dpkg-query -f '${Version}' -W speech-dispatcher-baratinoo 2> /dev/null)" ]
+then
+	dpkg-maintscript-helper rm_conffile /etc/speech-dispatcher/modules/baratinoo.conf 0.10.2-1\~ speech-dispatcher -- "$@"
+fi
+
+if [ -z "$(dpkg-query -f '${Version}' -W speech-dispatcher-ibmtts 2> /dev/null)" ]
+then
+	dpkg-maintscript-helper rm_conffile /etc/speech-dispatcher/modules/ibmtts.conf 0.10.2-1\~ speech-dispatcher -- "$@"
+fi
+
+if [ -z "$(dpkg-query -f '${Version}' -W speech-dispatcher-kali 2> /dev/null)" ]
+then
+	dpkg-maintscript-helper rm_conffile /etc/speech-dispatcher/modules/kali.conf 0.10.2-1\~ speech-dispatcher -- "$@"
+fi
+
+# Versions earlier than this only had an init script whose startup was
+# controlled by the default file
+if [ "$1" = configure ] && dpkg --compare-versions "$2" le 0.8.8-4 ; then
+  RUN=no
+
+  [ ! -f /etc/default/speech-dispatcher.dpkg-remove ] || . /etc/default/speech-dispatcher.dpkg-remove
+  [ ! -f /etc/default/speech-dispatcher.dpkg-backup ] || . /etc/default/speech-dispatcher.dpkg-backup
+
+  if [ "$RUN" = yes ]; then
+    update-rc.d speech-dispatcher enable
+    [ "$(uname -s)" != Linux ] || deb-systemd-helper enable speech-dispatcherd.service
+  else
+    update-rc.d speech-dispatcher disable
+    [ "$(uname -s)" != Linux ] || deb-systemd-helper disable speech-dispatcherd.service
+  fi
+
+fi

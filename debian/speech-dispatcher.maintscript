@@ -1,0 +1,5 @@
+rm_conffile /etc/speech-dispatcher/clients/gnome-speech.conf 0.8.8-7~ speech-dispatcher
+rm_conffile /etc/default/speech-dispatcher 0.8.8-4~ speech-dispatcher
+rm_conffile /etc/speech-dispatcher/modules/mary-generic.conf 0.10.1-2~ speech-dispatcher
+rm_conffile /etc/speech-dispatcher/modules/espeak-generic.conf 0.10.2-1~ speech-dispatcher
+rm_conffile /etc/speech-dispatcher/modules/pico-generic.conf 0.10.2-1~ speech-dispatcher
