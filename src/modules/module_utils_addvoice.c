@@ -228,6 +228,7 @@ char *module_getvoice(const char *language, SPDVoiceType voice)
 	}
 
 	switch (voice) {
+	case SPD_UNSPECIFIED:
 	case SPD_MALE1:
 		ret = voices->male1;
 		break;
@@ -253,7 +254,7 @@ char *module_getvoice(const char *language, SPDVoiceType voice)
 		ret = voices->child_female;
 		break;
 	default:
-		printf("Unknown voice");
+		fprintf(stderr, "Unknown voice %d", voice);
 		return NULL;
 	}
 

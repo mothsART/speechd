@@ -52,6 +52,8 @@ static int generic_pause_requested = 0;
 static char *execute_synth_str1;
 static char *execute_synth_str2;
 
+static gboolean initialized = FALSE;
+
 /* Internal functions prototypes */
 static void *get_ht_option(GHashTable * hash_table, const char *key);
 static void *_generic_speak(void *);
@@ -186,6 +188,7 @@ int module_init(char **status_info)
 		return -1;
 	}
 
+	initialized = TRUE;
 	*status_info = g_strdup("Everything ok so far.");
 	return 0;
 }
@@ -205,9 +208,9 @@ int module_speak(const gchar * data, size_t bytes, SPDMessageType msgtype)
 		DBG("Speaking when requested to write");
 		return 0;
 	}
-	UPDATE_STRING_PARAMETER(voice.name, generic_set_synthesis_voice);
 	UPDATE_STRING_PARAMETER(voice.language, generic_set_language);
 	UPDATE_PARAMETER(voice_type, generic_set_voice);
+	UPDATE_STRING_PARAMETER(voice.name, generic_set_synthesis_voice);
 	UPDATE_PARAMETER(punctuation_mode, generic_set_punct);
 	UPDATE_PARAMETER(pitch, generic_set_pitch);
 	UPDATE_PARAMETER(pitch_range, generic_set_pitch_range);
@@ -296,10 +299,15 @@ int module_close(void)
 		module_stop();
 	}
 
+	if (!initialized)
+		return 0;
+
 	if (module_terminate_thread(generic_speak_thread) != 0)
 		return -1;
 
 	sem_destroy(&generic_semaphore);
+
+	initialized = FALSE;
 
 	return 0;
 }
@@ -707,6 +715,7 @@ void generic_set_language(char *lang)
 
 void generic_set_voice(SPDVoiceType voice)
 {
+	DBG("Setting voice type %d", voice);
 	assert(generic_msg_language);
 	generic_msg_voice_str =
 	    module_getvoice(generic_msg_language->code, voice);
@@ -717,6 +726,7 @@ void generic_set_voice(SPDVoiceType voice)
 
 void generic_set_synthesis_voice(char *name)
 {
+	DBG("Setting voice name %s (%s)", name, msg_settings.voice.name);
 	assert(msg_settings.voice.name);
 	if (module_existsvoice(msg_settings.voice.name))
 		generic_msg_voice_str = msg_settings.voice.name;
